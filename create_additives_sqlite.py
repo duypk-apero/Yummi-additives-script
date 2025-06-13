@@ -108,54 +108,162 @@ class AdditivesSQLiteCreator:
     
     def classify_risk_level(self, additive: Dict[str, Any]) -> tuple[str, str]:
         """
-        Classify risk level based on available information.
+        Classify risk level based on available information and scientific consensus.
         Returns (risk_level, risk_color) tuple.
         
         Risk levels:
-        - GREEN: Safe additives
-        - YELLOW: Limited risk
-        - ORANGE: Moderate risk  
-        - RED: High risk
+        - GREEN: Safe additives (natural, vitamins, minerals)
+        - YELLOW: Limited risk (generally safe but synthetic)
+        - ORANGE: Moderate risk (some health concerns documented)
+        - RED: High risk (significant health concerns or restrictions)
         """
         
-        efsa_eval = str(additive.get("efsa_evaluation", "")).lower()
-        additives_classes = str(additive.get("additives_classes", "")).lower()
         e_number = additive.get("e_number", "")
+        additives_classes = str(additive.get("additives_classes", "")).lower()
+        name = str(additive.get("name", "")).lower()
+        efsa_eval = str(additive.get("efsa_evaluation", "")).lower()
         
-        # High risk (Red) - Known problematic additives
-        high_risk_additives = [
-            "E102", "E104", "E110", "E122", "E124", "E129",  # Artificial colors
-            "E621", "E622", "E623", "E624", "E625",  # MSG and glutamates
-            "E951", "E954", "E955",  # Artificial sweeteners
-            "E220", "E221", "E222", "E223", "E224", "E225", "E226", "E227", "E228"  # Sulfites
-        ]
+        # HIGH RISK (Red) - Additives with documented health concerns
+        high_risk_additives = {
+            # Artificial colors linked to hyperactivity
+            "102", "104", "110", "122", "124", "129", "131", "132", "133",
+            "127", "154", "180",
+            # Controversial sweeteners
+            "951", "954", "955", "961",  # Aspartame, Saccharin, Sucralose, Neotame
+            # Sulfites (allergens)
+            "220", "221", "222", "223", "224", "225", "226", "227", "228",
+            # Nitrates/Nitrites (preservation concerns)
+            "249", "250", "251", "252",
+            # MSG and related (sensitivities)
+            "621", "622", "623", "624", "625",
+            # Controversial preservatives
+            "210", "211", "212", "213", "214", "215", "216", "217", "218", "219",
+            # Trans fat related
+            "441", "442",
+            # Aluminum compounds
+            "173", "541", "554", "555", "556", "559",
+            # Questionable emulsifiers
+            "407a", "425", "466"
+        }
         
-        if (e_number in high_risk_additives or 
-            "high concern" in efsa_eval or 
-            "banned" in efsa_eval or
-            "carcinogen" in efsa_eval):
+        if e_number in high_risk_additives:
             return "RED", "red"
         
-        # Moderate risk (Orange)
-        moderate_risk_keywords = ["concern", "restricted", "allergy", "hyperactivity"]
-        if (any(keyword in efsa_eval for keyword in moderate_risk_keywords) or
-            any(keyword in additives_classes for keyword in moderate_risk_keywords)):
+        # ORANGE (Moderate risk) - Some concerns but widely used
+        moderate_risk_additives = {
+            # Some phosphates (overexposure concerns)
+            "338", "339", "340", "341", "343", "450", "451", "452",
+            # Some carrageenan
+            "407",
+            # Some antioxidants with restrictions
+            "320", "321", "310", "311", "312", "319", "324",
+            # Some synthetic colors (less problematic than red category)
+            "123", "155", "160b", "161g", "163",
+            # Some controversial thickeners
+            "414", "415", "418", "460", "461", "462", "463", "464", "465",
+            "466", "468", "469",
+            # Potassium bromate and similar
+            "924", "925", "926", "927", "928",
+            # Some synthetic flavoring
+            "150c", "150d"  # Caramel colors with ammonia
+        }
+        
+        if e_number in moderate_risk_additives:
             return "ORANGE", "orange"
         
-        # Limited risk (Yellow) - Artificial but generally safe
-        artificial_keywords = ["artificial", "synthetic", "chemical"]
-        if (any(keyword in additives_classes for keyword in artificial_keywords) or
-            "minor concern" in efsa_eval):
-            return "YELLOW", "yellow"
+        # GREEN (Safe) - Natural, vitamins, minerals, generally recognized as safe
+        safe_additives = {
+            # Vitamins
+            "101", "101i", "101ii",  # Riboflavin
+            "300", "301", "302", "303", "304", "304i", "304ii",  # Vitamin C compounds
+            "306", "307", "307a", "307b", "307c", "308", "309",  # Tocopherols (Vitamin E)
+            # Natural colors
+            "100",  # Curcumin
+            "140", "140i", "140ii",  # Chlorophylls
+            "160a", "160ai", "160aii",  # Carotenes
+            "160c", "160d", "160e", "160f",  # Natural carotenoids
+            "161a", "161b", "161c", "161d", "161e", "161f", "161h", "161i", "161j",
+            "162",  # Beetroot red
+            "163a", "163b", "163c", "163d", "163e", "163f",  # Anthocyanins
+            # Natural acids and salts
+            "330",  # Citric acid
+            "331", "331i", "331ii", "331iii",  # Sodium citrates
+            "332", "332i", "332ii",  # Potassium citrates
+            "333", "333i", "333ii", "333iii",  # Calcium citrates
+            "334",  # Tartaric acid
+            "335", "335i", "335ii",  # Sodium tartrates
+            "336", "336i", "336ii",  # Potassium tartrates
+            "337",  # Potassium sodium tartrate
+            # Natural extracts
+            "150a",  # Plain caramel
+            "200", "202", "203",  # Sorbic acid and sorbates
+            "270",  # Lactic acid
+            "290",  # Carbon dioxide
+            "322", "322i", "322ii",  # Lecithin
+            "401", "402", "403", "404", "405", "406",  # Natural gums (alginate, agar, etc.)
+            "407",  # Carrageenan (basic form)
+            "410", "412", "413", "415", "416", "417",  # Natural gums
+            "440", "440i", "440ii",  # Pectins
+            "471",  # Mono/diglycerides (when from natural sources)
+            # Natural minerals
+            "500", "500i", "500ii", "500iii",  # Sodium carbonates
+            "501", "501i", "501ii",  # Potassium carbonates
+            "503", "503i", "503ii",  # Ammonium carbonates
+            "504", "504i", "504ii",  # Magnesium carbonates
+            "507",  # Hydrochloric acid
+            "508",  # Potassium chloride
+            "509",  # Calcium chloride
+            "511",  # Magnesium chloride
+            "513",  # Sulfuric acid
+            "514", "514i", "514ii",  # Sodium sulfates
+            "515", "515i", "515ii",  # Potassium sulfates
+            "516",  # Calcium sulfate
+            "517",  # Ammonium sulfate
+            "518",  # Magnesium sulfate
+            # Natural sweeteners
+            "420", "420i", "420ii",  # Sorbitol
+            "965", "965i", "965ii",  # Maltitol
+            "967",  # Xylitol
+            "968",  # Erythritol
+            "960",  # Stevia glycosides
+            # Gases
+            "938", "939", "941", "942", "948", "949",  # Various gases
+        }
         
-        # No risk (Green) - Natural or well-studied safe additives
-        safe_keywords = ["natural", "vitamin", "mineral", "safe", "acceptable"]
-        if (any(keyword in efsa_eval for keyword in safe_keywords) or
-            any(keyword in additives_classes for keyword in safe_keywords) or
-            "acceptable daily intake" in efsa_eval):
+        if e_number in safe_additives:
             return "GREEN", "green"
         
-        # Default to limited risk if no clear classification
+        # Check by category for additional classification
+        if "colour" in additives_classes or "color" in additives_classes:
+            if any(danger in name for danger in ["artificial", "synthetic", "azo"]):
+                return "ORANGE", "orange"
+            else:
+                return "YELLOW", "yellow"
+        
+        if "preservative" in additives_classes:
+            if any(concern in name for concern in ["benzoate", "sulfite", "nitrite", "nitrate"]):
+                return "ORANGE", "orange"
+            else:
+                return "YELLOW", "yellow"
+        
+        if "sweetener" in additives_classes:
+            if "artificial" in name or any(sweet in name for sweet in ["aspartame", "saccharin", "acesulfame"]):
+                return "ORANGE", "orange"
+            else:
+                return "YELLOW", "yellow"
+        
+        # Natural categories tend to be safer
+        if any(natural in additives_classes for natural in ["antioxidant", "vitamin", "mineral"]):
+            return "GREEN", "green"
+        
+        if any(natural in name for natural in ["natural", "vitamin", "mineral", "citric", "lactic", "ascorbic"]):
+            return "GREEN", "green"
+        
+        # Emulsifiers and thickeners - mostly yellow unless specifically problematic
+        if any(category in additives_classes for category in ["emulsifier", "thickener", "stabiliser", "stabilizer"]):
+            return "YELLOW", "yellow"
+        
+        # Default to limited risk for unclassified additives
         return "YELLOW", "yellow"
     
     def get_additive_category(self, additive: Dict[str, Any]) -> str:
