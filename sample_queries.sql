@@ -3,20 +3,18 @@
 -- Database: additives.db
 
 -- 1. Get all additives with high risk (Red)
-SELECT e_number, name_en, name_vi, category 
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE risk_color = 'red' 
 ORDER BY e_number;
 
 -- 2. Search for additives by name (case-insensitive)
-SELECT e_number, name_en, name_vi, risk_level, category
+SELECT e_number, name, risk_level
 FROM additives 
-WHERE LOWER(name_en) LIKE LOWER('%curcumin%') 
-   OR LOWER(name_vi) LIKE LOWER('%curcumin%')
-   OR LOWER(e_number) LIKE LOWER('%e100%');
+WHERE LOWER(name) LIKE LOWER('%curcumin%');
 
 -- 3. Get vegetarian-friendly additives
-SELECT e_number, name_en, name_vi, risk_level
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE vegetarian = 'yes' 
 ORDER BY risk_color, e_number;
@@ -28,7 +26,7 @@ GROUP BY category
 ORDER BY count DESC;
 
 -- 5. Get additives with EFSA evaluation
-SELECT e_number, name_en, efsa_evaluation, risk_level
+SELECT e_number, name, efsa_evaluation, risk_level
 FROM additives 
 WHERE efsa_evaluation != '' 
 ORDER BY e_number;
@@ -44,13 +42,13 @@ GROUP BY risk_level, risk_color
 ORDER BY count DESC;
 
 -- 7. Search additives for ingredient scanning (by E-number)
-SELECT e_number, name_en, name_vi, risk_level, risk_color, category
+SELECT e_number, name, risk_level, risk_color
 FROM additives 
 WHERE e_number = ?;  -- Parameter for E-number lookup
 
 -- 8. Get all safe additives (Green)
-SELECT e_number, name_en, name_vi, category
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE risk_color = 'green' 
-ORDER BY category, e_number;
+ORDER BY risk_level, e_number;
         

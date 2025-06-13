@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Food Additives SQLite Database Creator for KMP Projects
-Based on Vietnamese documentation: Hướng Dẫn Cập Nhật Dữ Liệu Phụ Gia Thực Phẩm
 
 This script creates a SQLite database containing food additives with risk levels
 suitable for import into Kotlin Multiplatform (KMP) projects.
@@ -73,9 +72,8 @@ class AdditivesSQLiteCreator:
                 if not e_number:
                     continue
                 
-                # Extract names
+                # Extract names (English only)
                 name_en = value.get("name", {}).get("en", "")
-                name_vi = value.get("name", {}).get("vi", "")
                 
                 # Extract additional information
                 vegetarian = value.get("vegetarian", {}).get("en", "")
@@ -88,8 +86,7 @@ class AdditivesSQLiteCreator:
                 # Create additive record
                 additive = {
                     "e_number": e_number,
-                    "name_en": name_en,
-                    "name_vi": name_vi if name_vi else name_en,
+                    "name": name_en,
                     "vegetarian": vegetarian,
                     "vegan": vegan,
                     "efsa_evaluation": efsa_evaluation,
@@ -114,11 +111,11 @@ class AdditivesSQLiteCreator:
         Classify risk level based on available information.
         Returns (risk_level, risk_color) tuple.
         
-        Risk levels based on documentation:
-        - Không Rủi Ro (Xanh Lá): Safe additives
-        - Rủi Ro Hạn Chế (Vàng): Limited risk
-        - Rủi Ro Vừa Phải (Cam): Moderate risk  
-        - Rủi Ro Cao (Đỏ): High risk
+        Risk levels:
+        - GREEN: Safe additives
+        - YELLOW: Limited risk
+        - ORANGE: Moderate risk  
+        - RED: High risk
         """
         
         efsa_eval = str(additive.get("efsa_evaluation", "")).lower()
@@ -137,55 +134,55 @@ class AdditivesSQLiteCreator:
             "high concern" in efsa_eval or 
             "banned" in efsa_eval or
             "carcinogen" in efsa_eval):
-            return "Đỏ", "red"
+            return "RED", "red"
         
         # Moderate risk (Orange)
         moderate_risk_keywords = ["concern", "restricted", "allergy", "hyperactivity"]
         if (any(keyword in efsa_eval for keyword in moderate_risk_keywords) or
             any(keyword in additives_classes for keyword in moderate_risk_keywords)):
-            return "Cam", "orange"
+            return "ORANGE", "orange"
         
         # Limited risk (Yellow) - Artificial but generally safe
         artificial_keywords = ["artificial", "synthetic", "chemical"]
         if (any(keyword in additives_classes for keyword in artificial_keywords) or
             "minor concern" in efsa_eval):
-            return "Vàng", "yellow"
+            return "YELLOW", "yellow"
         
         # No risk (Green) - Natural or well-studied safe additives
         safe_keywords = ["natural", "vitamin", "mineral", "safe", "acceptable"]
         if (any(keyword in efsa_eval for keyword in safe_keywords) or
             any(keyword in additives_classes for keyword in safe_keywords) or
             "acceptable daily intake" in efsa_eval):
-            return "Xanh Lá", "green"
+            return "GREEN", "green"
         
         # Default to limited risk if no clear classification
-        return "Vàng", "yellow"
+        return "YELLOW", "yellow"
     
     def get_additive_category(self, additive: Dict[str, Any]) -> str:
         """Determine additive category based on class information."""
         classes = str(additive.get("additives_classes", "")).lower()
         
         category_mapping = {
-            "colour": "Màu thực phẩm",
-            "color": "Màu thực phẩm", 
-            "preservative": "Chất bảo quản",
-            "antioxidant": "Chất chống oxy hóa",
-            "sweetener": "Chất tạo ngọt",
-            "emulsifier": "Chất nhũ hóa",
-            "stabiliser": "Chất ổn định",
-            "stabilizer": "Chất ổn định",
-            "thickener": "Chất làm đặc",
-            "flavour enhancer": "Chất tăng cường hương vị",
-            "flavor enhancer": "Chất tăng cường hương vị",
-            "acidity regulator": "Chất điều chỉnh độ axit",
-            "anti-caking": "Chất chống đông cục"
+            "colour": "Food Colors",
+            "color": "Food Colors", 
+            "preservative": "Preservatives",
+            "antioxidant": "Antioxidants",
+            "sweetener": "Sweeteners",
+            "emulsifier": "Emulsifiers",
+            "stabiliser": "Stabilizers",
+            "stabilizer": "Stabilizers",
+            "thickener": "Thickeners",
+            "flavour enhancer": "Flavor Enhancers",
+            "flavor enhancer": "Flavor Enhancers",
+            "acidity regulator": "Acidity Regulators",
+            "anti-caking": "Anti-Caking Agents"
         }
         
         for keyword, category in category_mapping.items():
             if keyword in classes:
                 return category
         
-        return "Khác"
+        return "Other"
     
     def add_manual_additives(self) -> List[Dict[str, Any]]:
         """Add manually curated additives data for completeness."""
@@ -194,8 +191,7 @@ class AdditivesSQLiteCreator:
         manual_additives = [
             {
                 "e_number": "E100",
-                "name_en": "Curcumin",
-                "name_vi": "Nghệ",
+                "name": "Curcumin",
                 "vegetarian": "yes",
                 "vegan": "yes",
                 "efsa_evaluation": "safe",
@@ -207,8 +203,7 @@ class AdditivesSQLiteCreator:
             },
             {
                 "e_number": "E101", 
-                "name_en": "Riboflavin",
-                "name_vi": "Vitamin B2",
+                "name": "Riboflavin",
                 "vegetarian": "yes",
                 "vegan": "yes",
                 "efsa_evaluation": "safe vitamin",
@@ -220,8 +215,7 @@ class AdditivesSQLiteCreator:
             },
             {
                 "e_number": "E300",
-                "name_en": "Ascorbic acid",
-                "name_vi": "Axit ascorbic (Vitamin C)",
+                "name": "Ascorbic acid",
                 "vegetarian": "yes",
                 "vegan": "yes", 
                 "efsa_evaluation": "safe vitamin",
@@ -251,13 +245,11 @@ class AdditivesSQLiteCreator:
         CREATE TABLE additives (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             e_number TEXT UNIQUE NOT NULL,
-            name_en TEXT NOT NULL,
-            name_vi TEXT NOT NULL,
+            name TEXT NOT NULL,
             risk_level TEXT NOT NULL,
             risk_color TEXT NOT NULL,
             category TEXT,
-            description_en TEXT,
-            description_vi TEXT,
+            description TEXT,
             vegetarian TEXT,
             vegan TEXT,
             efsa_evaluation TEXT,
@@ -274,8 +266,7 @@ class AdditivesSQLiteCreator:
         cursor.execute('CREATE INDEX idx_e_number ON additives(e_number)')
         cursor.execute('CREATE INDEX idx_risk_level ON additives(risk_level)')
         cursor.execute('CREATE INDEX idx_category ON additives(category)')
-        cursor.execute('CREATE INDEX idx_name_en ON additives(name_en)')
-        cursor.execute('CREATE INDEX idx_name_vi ON additives(name_vi)')
+        cursor.execute('CREATE INDEX idx_name_en ON additives(name)')
         
         # Create metadata table for versioning
         cursor.execute('''
@@ -317,26 +308,23 @@ class AdditivesSQLiteCreator:
                 # Get category
                 category = self.get_additive_category(additive)
                 
-                # Create descriptions (can be enhanced later)
-                description_en = f"Food additive {additive['e_number']}"
-                description_vi = f"Phụ gia thực phẩm {additive['e_number']}"
+                # Create description
+                description = f"Food additive {additive['e_number']}"
                 
                 cursor.execute('''
                 INSERT OR REPLACE INTO additives (
-                    e_number, name_en, name_vi, risk_level, risk_color,
-                    category, description_en, description_vi, vegetarian, vegan,
+                    e_number, name, risk_level, risk_color,
+                    category, description, vegetarian, vegan,
                     efsa_evaluation, efsa_url, efsa_date, additives_classes,
                     sources, last_updated
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     additive['e_number'],
-                    additive['name_en'],
-                    additive['name_vi'],
+                    additive['name'],
                     risk_level,
                     risk_color,
                     category,
-                    description_en,
-                    description_vi,
+                    description,
                     additive.get('vegetarian', ''),
                     additive.get('vegan', ''),
                     additive.get('efsa_evaluation', ''),
@@ -432,20 +420,18 @@ class AdditivesSQLiteCreator:
 -- Database: additives.db
 
 -- 1. Get all additives with high risk (Red)
-SELECT e_number, name_en, name_vi, category 
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE risk_color = 'red' 
 ORDER BY e_number;
 
 -- 2. Search for additives by name (case-insensitive)
-SELECT e_number, name_en, name_vi, risk_level, category
+SELECT e_number, name, risk_level
 FROM additives 
-WHERE LOWER(name_en) LIKE LOWER('%curcumin%') 
-   OR LOWER(name_vi) LIKE LOWER('%curcumin%')
-   OR LOWER(e_number) LIKE LOWER('%e100%');
+WHERE LOWER(name) LIKE LOWER('%curcumin%');
 
 -- 3. Get vegetarian-friendly additives
-SELECT e_number, name_en, name_vi, risk_level
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE vegetarian = 'yes' 
 ORDER BY risk_color, e_number;
@@ -457,7 +443,7 @@ GROUP BY category
 ORDER BY count DESC;
 
 -- 5. Get additives with EFSA evaluation
-SELECT e_number, name_en, efsa_evaluation, risk_level
+SELECT e_number, name, efsa_evaluation, risk_level
 FROM additives 
 WHERE efsa_evaluation != '' 
 ORDER BY e_number;
@@ -473,15 +459,15 @@ GROUP BY risk_level, risk_color
 ORDER BY count DESC;
 
 -- 7. Search additives for ingredient scanning (by E-number)
-SELECT e_number, name_en, name_vi, risk_level, risk_color, category
+SELECT e_number, name, risk_level, risk_color
 FROM additives 
 WHERE e_number = ?;  -- Parameter for E-number lookup
 
 -- 8. Get all safe additives (Green)
-SELECT e_number, name_en, name_vi, category
+SELECT e_number, name, risk_level
 FROM additives 
 WHERE risk_color = 'green' 
-ORDER BY category, e_number;
+ORDER BY risk_level, e_number;
         '''
         
         with open("sample_queries.sql", "w", encoding="utf-8") as f:
@@ -513,7 +499,7 @@ ORDER BY category, e_number;
             logger.warning(f"Found {len(duplicates)} duplicate E-numbers")
         
         # Check for missing required fields
-        cursor.execute("SELECT COUNT(*) FROM additives WHERE e_number = '' OR name_en = ''")
+        cursor.execute("SELECT COUNT(*) FROM additives WHERE e_number = '' OR name = ''")
         missing_required = cursor.fetchone()[0]
         if missing_required > 0:
             logger.warning(f"Found {missing_required} records with missing required fields")
@@ -521,7 +507,7 @@ ORDER BY category, e_number;
         # Check risk level distribution
         cursor.execute("SELECT DISTINCT risk_level FROM additives")
         risk_levels = [row[0] for row in cursor.fetchall()]
-        expected_levels = ["Xanh Lá", "Vàng", "Cam", "Đỏ"]
+        expected_levels = ["GREEN", "YELLOW", "ORANGE", "RED"]
         
         for level in risk_levels:
             if level not in expected_levels:

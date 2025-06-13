@@ -1,164 +1,202 @@
-# Food Additives SQLite Database for KMP Projects
+# SQLite Database Integration for KMP Projects
 
-This Python script creates a SQLite database containing food additives with risk classifications, specifically designed for import into Kotlin Multiplatform (KMP) projects.
+This documentation provides detailed information about integrating the food additives SQLite database into Kotlin Multiplatform (KMP) projects.
 
-## Features
+## Database Overview
 
-- Downloads data from Open Food Facts API
-- Classifies additives into risk levels (Green, Yellow, Orange, Red)
-- Vietnamese and English names support
-- KMP-optimized database schema with indexes
-- Sample SQL queries for common use cases
-- Comprehensive logging and validation
+The `additives.db` SQLite database contains comprehensive information about food additives with:
+- E-numbers and English names
+- Risk classification system using color-coded levels
+- Category information
+- Vegetarian and vegan compatibility
+- EFSA evaluation data
 
-## Risk Level Classification
+## Risk Classification System
 
-Based on the Vietnamese documentation, additives are classified into:
+The database implements a color-coded risk classification system:
 
-- **Xanh Lá (Green)**: Safe additives - natural ingredients, vitamins, minerals
-- **Vàng (Yellow)**: Limited risk - artificial but generally safe additives
-- **Cam (Orange)**: Moderate risk - additives with some concerns or restrictions
-- **Đỏ (Red)**: High risk - additives with significant health concerns or banned in some countries
-
-## Installation
-
-1. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Basic Usage
-```bash
-python create_additives_sqlite.py
-```
-
-### Custom Database Path
-```bash
-python create_additives_sqlite.py my_additives.db
-```
-
-## Generated Files
-
-- `additives.db` - SQLite database ready for KMP import
-- `sample_queries.sql` - Example SQL queries for KMP usage
-- `additives_sqlite_creation_YYYYMMDD.log` - Detailed execution log
-- `openfoodfacts_raw_YYYYMMDD.json` - Raw data backup
+- **GREEN**: Safe additives - natural ingredients, vitamins, minerals
+- **YELLOW**: Limited risk - artificial but generally safe additives
+- **ORANGE**: Moderate risk - additives with some concerns or restrictions
+- **RED**: High risk - additives with significant health concerns or banned in some countries
 
 ## Database Schema
 
-### Additives Table
+The main table structure:
 
-| Column | Type | Description |
-|--------|------|-------------|
+```sql
+CREATE TABLE additives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    e_number TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    risk_level TEXT NOT NULL,
+    risk_color TEXT NOT NULL,
+    category TEXT,
+    description TEXT,
+    vegetarian TEXT,
+    vegan TEXT,
+    efsa_evaluation TEXT,
+    efsa_url TEXT,
+    efsa_date TEXT,
+    additives_classes TEXT,
+    sources TEXT,
+    last_updated TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
 | id | INTEGER | Primary key |
-| e_number | TEXT | E-number (e.g., E100) |
-| name_en | TEXT | English name |
-| name_vi | TEXT | Vietnamese name |
-| risk_level | TEXT | Risk level in Vietnamese |
-| risk_color | TEXT | Risk color (green, yellow, orange, red) |
+| e_number | TEXT | E-number (e.g., "E100") |
+| name | TEXT | English name |
+| risk_level | TEXT | Risk level (GREEN, YELLOW, ORANGE, RED) |
+| risk_color | TEXT | Color code for UI |
 | category | TEXT | Additive category |
-| description_en | TEXT | English description |
-| description_vi | TEXT | Vietnamese description |
-| vegetarian | TEXT | Vegetarian-friendly (yes/no) |
-| vegan | TEXT | Vegan-friendly (yes/no) |
-| efsa_evaluation | TEXT | EFSA evaluation status |
+| description | TEXT | English description |
+| vegetarian | TEXT | Vegetarian compatibility |
+| vegan | TEXT | Vegan compatibility |
+| efsa_evaluation | TEXT | EFSA safety evaluation |
 | efsa_url | TEXT | EFSA evaluation URL |
-| efsa_date | TEXT | EFSA evaluation date |
+| efsa_date | TEXT | Evaluation date |
 | additives_classes | TEXT | Additive classes |
 | sources | TEXT | Data sources |
 | last_updated | TEXT | Last update timestamp |
 | created_at | TIMESTAMP | Record creation time |
 
-### Metadata Table
+## Integration Methods
 
-Stores database versioning and metadata information.
+### Method 1: SQLDelight (Recommended for KMP)
 
-## KMP Integration Examples
+1. Add SQLDelight to your project
+2. Copy the database schema to `.sq` files
+3. Use generated type-safe APIs
 
-### Kotlin Data Class
 ```kotlin
-@Entity(tableName = "additives")
-data class Additive(
-    @PrimaryKey val id: Int,
-    @ColumnInfo(name = "e_number") val eNumber: String,
-    @ColumnInfo(name = "name_en") val nameEn: String,
-    @ColumnInfo(name = "name_vi") val nameVi: String,
-    @ColumnInfo(name = "risk_level") val riskLevel: String,
-    @ColumnInfo(name = "risk_color") val riskColor: String,
-    val category: String,
-    val vegetarian: String,
-    val vegan: String
-)
+// Database queries
+selectByENumber:
+SELECT * FROM additives WHERE e_number = ?;
+
+searchByName:
+SELECT * FROM additives WHERE LOWER(name) LIKE LOWER('%' || ? || '%');
 ```
 
-### Room DAO Example
-```kotlin
-@Dao
-interface AdditiveDao {
-    @Query("SELECT * FROM additives WHERE e_number = :eNumber")
-    suspend fun getByENumber(eNumber: String): Additive?
-    
-    @Query("SELECT * FROM additives WHERE risk_color = :riskColor")
-    suspend fun getByRiskLevel(riskColor: String): List<Additive>
-    
-    @Query("SELECT * FROM additives WHERE LOWER(name_en) LIKE LOWER(:query) OR LOWER(name_vi) LIKE LOWER(:query)")
-    suspend fun searchByName(query: String): List<Additive>
-}
-```
+### Method 2: Room Database (Android)
 
-### Database Setup in KMP
+1. Copy `additives.db` to `assets/` folder
+2. Use Room's `createFromAsset()` method
+3. Define entities and DAOs
+
 ```kotlin
-// commonMain
-@Database(
-    entities = [Additive::class],
-    version = 1,
-    exportSchema = false
-)
+@Database(entities = [Additive::class], version = 1)
+@TypeConverters(Converters::class)
 abstract class AdditiveDatabase : RoomDatabase() {
     abstract fun additiveDao(): AdditiveDao
 }
-
-// Copy the SQLite file to your app's assets folder
-// The database will be automatically imported when the app starts
 ```
 
-## Sample Queries
+### Method 3: Direct SQLite
 
-The script generates `sample_queries.sql` with common use cases:
+For simple use cases, use platform-specific SQLite drivers directly.
 
-1. Search by E-number for barcode scanning
-2. Filter by risk level for health-conscious users
-3. Vegetarian/vegan filtering
-4. Category-based browsing
-5. Full-text search functionality
+## Common Queries
 
-## Data Sources
+### Search by E-number
+```sql
+SELECT * FROM additives WHERE e_number = 'E100';
+```
 
-- **Open Food Facts**: Primary data source with taxonomies
-- **Manual curation**: Additional high-quality data for common additives
-- **EFSA evaluations**: European Food Safety Authority assessments
+### Get high-risk additives
+```sql
+SELECT e_number, name, risk_level 
+FROM additives 
+WHERE risk_level = 'RED' 
+ORDER BY e_number;
+```
 
-## Customization
+### Search by name
+```sql
+SELECT * FROM additives 
+WHERE LOWER(name) LIKE LOWER('%vitamin%') 
+ORDER BY name;
+```
 
-You can modify the risk classification logic in the `classify_risk_level()` method to adjust risk levels based on your specific requirements or regional regulations.
+### Filter by dietary preferences
+```sql
+-- Vegetarian-friendly
+SELECT * FROM additives WHERE vegetarian = 'yes';
 
-## Logging
+-- Vegan-friendly  
+SELECT * FROM additives WHERE vegan = 'yes';
+```
 
-The script provides comprehensive logging including:
-- Data download progress
-- Processing statistics
-- Database validation results
-- Error handling and warnings
+### Get statistics
+```sql
+SELECT risk_level, COUNT(*) as count 
+FROM additives 
+GROUP BY risk_level 
+ORDER BY count DESC;
+```
 
-## Updates
+## Platform-Specific Implementation
 
-To update the database with new data:
-1. Run the script again (it will overwrite the existing database)
-2. The script automatically downloads the latest data from Open Food Facts
-3. Check the log file for any changes or new additives
+### Android
+- Use Room or SQLDelight
+- Copy database to assets folder
+- Handle database versioning
+
+### iOS
+- Use SQLite.swift or SQLDelight
+- Bundle database with app
+- Handle Core Data integration if needed
+
+### Desktop/JVM
+- Use JDBC SQLite driver
+- File-based or in-memory database
+
+## Performance Considerations
+
+1. **Indexes**: The database includes optimized indexes for common queries
+2. **Caching**: Consider caching frequently accessed data
+3. **Pagination**: For large result sets, implement pagination
+4. **Background Processing**: Perform database operations off the main thread
+
+## Data Updates
+
+The database can be updated by:
+1. Re-running the Python script
+2. Downloading updated database file
+3. Implementing incremental updates via API
+
+## Error Handling
+
+Common scenarios to handle:
+- Database file not found
+- Corrupted database
+- Missing additive data
+- Network errors during updates
+
+## Security Considerations
+
+- Validate E-number inputs
+- Sanitize search queries
+- Implement proper access controls
+- Consider data encryption for sensitive applications
+
+## Testing
+
+Sample test data is included for:
+- All risk levels
+- Various categories
+- Vegetarian/vegan options
+- EFSA-evaluated additives
 
 ## Support
 
-For issues or questions about the Vietnamese documentation that this script is based on, refer to the source documentation: "Hướng Dẫn Cập Nhật Dữ Liệu Phụ Gia Thực Phẩm". 
+For integration issues:
+1. Check the database schema matches your entity definitions
+2. Verify index usage for performance
+3. Test with sample queries provided
+4. Review platform-specific documentation 

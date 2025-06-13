@@ -4,12 +4,12 @@
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![SQLite](https://img.shields.io/badge/SQLite-3.0+-green.svg)](https://sqlite.org/)
 
-A comprehensive Python script to create and populate an SQLite database with food additives data for Kotlin Multiplatform (KMP) projects. This script fetches data from Open Food Facts API and creates a structured database with Vietnamese risk classifications and detailed additive information.
+A comprehensive Python script to create and populate an SQLite database with food additives data for Kotlin Multiplatform (KMP) projects. This script fetches data from Open Food Facts API and creates a structured database with English risk classifications and detailed additive information.
 
 ## 🚀 Features
 
 - **Automated Data Fetching**: Retrieves food additives data from Open Food Facts API
-- **Risk Classification**: Implements Vietnamese color-coded risk levels (Xanh Lá/Green, Vàng/Yellow, Cam/Orange, Đỏ/Red)
+- **Risk Classification**: Implements color-coded risk levels (Green, Yellow, Orange, Red)
 - **SQLite Database**: Creates optimized database with proper indexing for fast queries
 - **KMP Ready**: Generates database compatible with Kotlin Multiplatform projects
 - **Comprehensive Logging**: Detailed logs of the database creation process
@@ -115,8 +115,8 @@ After running the script, you'll get statistics like:
 - **Vegetarian-friendly**: 435 (80.4%)
 - **Vegan-friendly**: 431 (79.7%)
 - **Risk Distribution**:
-  - Yellow (Vàng): 95.7%
-  - Green (Xanh Lá): 4.3%
+  - Yellow: 95.7%
+  - Green: 4.3%
 - **Top Categories**: Mixed (48.6%), Emulsifiers (18.3%), Colors (8.7%)
 
 ## 🔍 Sample Queries
@@ -134,7 +134,7 @@ ORDER BY name;
 ```sql
 SELECT e_number, name, risk_level 
 FROM additives 
-WHERE risk_level = 'Đỏ' 
+WHERE risk_level = 'RED' 
 ORDER BY e_number;
 ```
 
@@ -155,14 +155,14 @@ ORDER BY count DESC;
 
 ## 🧩 Risk Classification System
 
-The database implements a Vietnamese risk classification system:
+The database implements a color-coded risk classification system:
 
 | Risk Level | Color | Description |
 |------------|-------|-------------|
-| Xanh Lá | 🟢 Green | Generally safe for consumption |
-| Vàng | 🟡 Yellow | Moderate risk, use with caution |
-| Cam | 🟠 Orange | Higher risk, limit consumption |
-| Đỏ | 🔴 Red | High risk, avoid if possible |
+| GREEN | 🟢 Green | Generally safe for consumption |
+| YELLOW | 🟡 Yellow | Moderate risk, use with caution |
+| ORANGE | 🟠 Orange | Higher risk, limit consumption |
+| RED | 🔴 Red | High risk, avoid if possible |
 
 ## 🤝 Contributing
 
@@ -179,7 +179,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Open Food Facts](https://openfoodfacts.org/) for providing comprehensive food additives data
-- Vietnamese documentation "Hướng Dẫn Cập Nhật Dữ Liệu Phụ Gia Thực Phẩm" for risk classification guidelines
 - SQLite team for the excellent database engine
 - Kotlin Multiplatform community for cross-platform development tools
 
@@ -199,10 +198,10 @@ To update the database with the latest food additives data:
 # Backup existing database
 cp additives.db additives_backup.db
 
-# Run the script to fetch fresh data
+# Re-run the script
 python create_additives_sqlite.py
 ```
 
 ---
 
-**Made with ❤️ for the Vietnamese food safety community** 
+**Made with ❤️ for the food safety community** 
