@@ -115,9 +115,11 @@ After running the script, you'll get statistics like:
 - **Vegetarian-friendly**: 435 (80.4%)
 - **Vegan-friendly**: 431 (79.7%)
 - **Risk Distribution**:
-  - Yellow: 95.7%
-  - Green: 4.3%
-- **Top Categories**: Mixed (48.6%), Emulsifiers (18.3%), Colors (8.7%)
+  - Yellow: 341 (63.0%)
+  - Green: 104 (19.2%)
+  - Red: 55 (10.2%)
+  - Orange: 41 (7.6%)
+- **Top Categories**: Other (48.6%), Emulsifiers (18.3%), Food Colors (8.7%)
 
 ## 🔍 Sample Queries
 
