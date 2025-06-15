@@ -337,6 +337,199 @@ class AdditivesSQLiteCreator:
         
         return manual_additives
     
+    def create_detailed_description(self, additive: Dict[str, Any], risk_level: str, category: str) -> str:
+        """Create a comprehensive description for the additive."""
+        e_number = additive.get("e_number", "")
+        name = additive.get("name", "").strip()
+        additives_classes = additive.get("additives_classes", "").lower()
+        efsa_evaluation = additive.get("efsa_evaluation", "").lower()
+        vegetarian = additive.get("vegetarian", "").lower()
+        vegan = additive.get("vegan", "").lower()
+        
+        # Start with basic function description based on category and classes
+        function_descriptions = {
+            "Colors": "food coloring agent",
+            "Preservatives": "food preservative", 
+            "Antioxidants": "antioxidant to prevent spoilage",
+            "Sweeteners": "artificial sweetener",
+            "Emulsifiers": "emulsifier to blend ingredients",
+            "Stabilizers": "stabilizer to maintain texture",
+            "Thickeners": "thickening agent",
+            "Acidity_Regulators": "acidity regulator",
+            "Flavor_Enhancers": "flavor enhancer",
+            "Anti_Caking_Agents": "anti-caking agent to prevent clumping",
+            "Foaming_Agents": "foaming agent",
+            "Glazing_Agents": "glazing agent for surface coating",
+            "Humectants": "humectant to retain moisture",
+            "Bulking_Agents": "bulking agent to add volume",
+            "Sequestrants": "sequestrant to bind metals"
+        }
+        
+        # Get base function description
+        base_function = function_descriptions.get(category, "food additive")
+        
+        # Enhanced descriptions based on additive classes
+        if "colour" in additives_classes or "color" in additives_classes:
+            if "natural" in additives_classes:
+                base_function = "natural food coloring derived from plants or minerals"
+            elif "synthetic" in additives_classes or "artificial" in additives_classes:
+                base_function = "artificial food coloring"
+            else:
+                base_function = "food coloring agent"
+                
+        elif "preservative" in additives_classes:
+            if "natural" in additives_classes:
+                base_function = "natural preservative to extend shelf life"
+            else:
+                base_function = "preservative to prevent spoilage and extend shelf life"
+                
+        elif "antioxidant" in additives_classes:
+            if "vitamin" in additives_classes:
+                base_function = "vitamin with antioxidant properties"
+            elif "natural" in additives_classes:
+                base_function = "natural antioxidant to prevent rancidity"
+            else:
+                base_function = "antioxidant to prevent oxidation and rancidity"
+                
+        elif "sweetener" in additives_classes:
+            if "artificial" in additives_classes:
+                base_function = "artificial sweetener with high sweetening power"
+            elif "natural" in additives_classes:
+                base_function = "natural sweetening agent"
+            else:
+                base_function = "sweetening agent"
+                
+        elif "emulsifier" in additives_classes:
+            base_function = "emulsifier to help mix oil and water-based ingredients"
+            
+        elif "stabilizer" in additives_classes or "stabiliser" in additives_classes:
+            base_function = "stabilizer to maintain food texture and consistency"
+            
+        elif "thickener" in additives_classes or "thickening" in additives_classes:
+            base_function = "thickening agent to increase viscosity"
+            
+        elif "flavour" in additives_classes or "flavor" in additives_classes:
+            if "enhancer" in additives_classes:
+                base_function = "flavor enhancer to intensify taste"
+            else:
+                base_function = "flavoring agent"
+                
+        elif "acid" in additives_classes:
+            base_function = "acidity regulator to control pH levels"
+            
+        # Build comprehensive description
+        description_parts = []
+        
+        # Add the main function
+        description_parts.append(f"{name} ({e_number}) is a {base_function}")
+        
+        # Add safety/risk information
+        risk_descriptions = {
+            "GREEN": "considered safe with no known health concerns",
+            "YELLOW": "generally safe but may have some limitations or sensitivities", 
+            "ORANGE": "has some documented health concerns or restrictions",
+            "RED": "has significant health concerns and should be consumed with caution"
+        }
+        
+        if risk_level in risk_descriptions:
+            description_parts.append(f"It is {risk_descriptions[risk_level]}")
+        
+        # Add dietary information
+        dietary_info = []
+        if vegetarian == "yes":
+            dietary_info.append("vegetarian-friendly")
+        if vegan == "yes":
+            dietary_info.append("vegan-friendly")
+        elif vegetarian == "yes" and vegan != "yes":
+            dietary_info.append("vegetarian-friendly but not vegan")
+            
+        if dietary_info:
+            description_parts.append(f"This additive is {' and '.join(dietary_info)}")
+        
+        # Add EFSA evaluation if available
+        if efsa_evaluation and "safe" in efsa_evaluation:
+            description_parts.append("EFSA has evaluated this additive as safe for consumption")
+        elif efsa_evaluation and efsa_evaluation not in ["", "unknown"]:
+            description_parts.append(f"EFSA evaluation: {efsa_evaluation}")
+        
+        # Add specific usage information for common additives
+        specific_usage = self.get_specific_usage_info(e_number, name.lower())
+        if specific_usage:
+            description_parts.append(specific_usage)
+        
+        return ". ".join(description_parts) + "."
+    
+    def get_specific_usage_info(self, e_number: str, name: str) -> str:
+        """Get specific usage information for well-known additives."""
+        specific_info = {
+            "E100": "Commonly used in curry powders, mustard, and dairy products for its golden yellow color",
+            "E101": "Essential B-vitamin naturally found in milk, eggs, and green vegetables",
+            "E102": "Bright yellow synthetic dye often used in confectionery and beverages",
+            "E104": "Yellow synthetic dye used in processed foods and cosmetics",
+            "E110": "Orange-yellow synthetic dye commonly found in orange-flavored products",
+            "E120": "Natural red dye derived from cochineal insects, used in cosmetics and foods",
+            "E122": "Synthetic red dye used in confectionery, beverages, and desserts",
+            "E124": "Synthetic red dye commonly used in processed foods and beverages",
+            "E129": "Synthetic orange-red dye used in confectionery and beverages",
+            "E131": "Synthetic blue dye used in confectionery and beverages",
+            "E132": "Synthetic blue dye commonly used in processed foods",
+            "E133": "Synthetic blue dye used in confectionery, beverages, and cosmetics",
+            "E140": "Natural green pigment derived from plants, used in food coloring",
+            "E150": "Brown coloring made from heated sugars, commonly used in cola drinks",
+            "E160a": "Natural orange pigment from carrots and other plants",
+            "E160c": "Natural red-orange pigment from paprika",
+            "E162": "Natural purple-red pigment from beetroot",
+            "E163": "Natural purple pigment from grapes and berries",
+            "E200": "Natural preservative found in berries, used to prevent mold and yeast growth",
+            "E202": "Synthetic preservative commonly used in baked goods and beverages",
+            "E210": "Synthetic preservative used in pickled foods and beverages",
+            "E211": "Synthetic preservative commonly used in soft drinks and acidic foods",
+            "E220": "Preservative and antioxidant used in dried fruits and wine",
+            "E249": "Preservative used primarily in processed meats to prevent botulism",
+            "E250": "Preservative used in cured meats to maintain color and prevent bacteria",
+            "E300": "Vitamin C, essential nutrient and powerful antioxidant",
+            "E301": "Sodium salt of Vitamin C, used as antioxidant and preservative",
+            "E306": "Natural Vitamin E, powerful antioxidant found in vegetable oils",
+            "E330": "Natural acid found in citrus fruits, used as preservative and flavor enhancer",
+            "E407": "Natural thickener derived from seaweed, used in dairy products",
+            "E412": "Natural thickener from guar beans, used in gluten-free products",
+            "E414": "Natural thickener from acacia trees, used in confectionery",
+            "E415": "Thickener produced by fermentation, used in gluten-free baking",
+            "E420": "Natural sugar alcohol used as sweetener and humectant",
+            "E421": "Natural sugar alcohol found in fruits, used as sweetener",
+            "E440": "Natural thickener from fruits, used in jams and jellies",
+            "E471": "Emulsifier derived from plant or animal fats, used in baked goods",
+            "E500": "Baking soda, natural mineral used as raising agent",
+            "E621": "Flavor enhancer naturally found in seaweed and aged cheeses",
+            "E950": "Artificial sweetener 200 times sweeter than sugar",
+            "E951": "Artificial sweetener 200 times sweeter than sugar, contains phenylalanine",
+            "E952": "Artificial sweetener used in sugar-free products",
+            "E954": "Artificial sweetener 300 times sweeter than sugar",
+            "E955": "Artificial sweetener 600 times sweeter than sugar"
+        }
+        
+        # Check by E-number first
+        if e_number in specific_info:
+            return specific_info[e_number]
+        
+        # Check by name patterns
+        if "curcumin" in name:
+            return "Commonly used in curry powders, mustard, and dairy products for its golden yellow color"
+        elif "riboflavin" in name:
+            return "Essential B-vitamin naturally found in milk, eggs, and green vegetables"
+        elif "ascorbic" in name:
+            return "Essential vitamin and powerful antioxidant naturally found in citrus fruits"
+        elif "citric" in name:
+            return "Natural acid found in citrus fruits, widely used as preservative and flavor enhancer"
+        elif "lecithin" in name:
+            return "Natural emulsifier found in egg yolks and soybeans, used in chocolate and baked goods"
+        elif "pectin" in name:
+            return "Natural thickener found in fruits, commonly used in jams and jellies"
+        elif "gellan" in name:
+            return "Thickener produced by fermentation, used in plant-based milk alternatives"
+        
+        return ""
+    
     def create_database_schema(self):
         """Create SQLite database schema optimized for KMP projects."""
         logger.info(f"Creating database schema in {self.db_path}...")
@@ -416,8 +609,8 @@ class AdditivesSQLiteCreator:
                 # Get category
                 category = self.get_additive_category(additive)
                 
-                # Create description
-                description = f"Food additive {additive['e_number']}"
+                # Create comprehensive description
+                description = self.create_detailed_description(additive, risk_level, category)
                 
                 cursor.execute('''
                 INSERT OR REPLACE INTO additives (

@@ -164,6 +164,32 @@ The database implements a color-coded risk classification system:
 | ORANGE | 🟠 Orange | Higher risk, limit consumption |
 | RED | 🔴 Red | High risk, avoid if possible |
 
+## 📚 Data Sources & Description Generation
+
+### Data Source Priority
+1. **Open Food Facts API** (Primary) - 600+ additives with comprehensive data
+2. **Manual Curated Data** (Secondary) - Hand-verified critical additives  
+3. **EFSA Evaluations** (Validation) - Scientific safety assessments
+
+### Enhanced Descriptions
+Each additive now includes comprehensive information instead of generic "Food additive E###":
+
+**Before**: `Food additive E100`
+
+**After**: `Curcumin (E100) is a natural food coloring derived from plants or minerals. It is generally safe but may have some limitations or sensitivities. This additive is vegetarian-friendly and vegan-friendly. EFSA has evaluated this additive as safe for consumption. Commonly used in curry powders, mustard, and dairy products for its golden yellow color.`
+
+### Description Components
+- ✅ **Function**: Natural/synthetic classification and primary use
+- ✅ **Safety**: Risk level with clear explanations  
+- ✅ **Dietary**: Vegetarian/vegan compatibility
+- ✅ **Regulatory**: EFSA evaluation status when available
+- ✅ **Usage**: Common applications in food products
+
+### Processing Pipeline
+```
+Open Food Facts API → Data Validation → Manual Supplements → Risk Classification → Enhanced Description Generation → SQLite Database
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
