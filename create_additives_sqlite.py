@@ -85,6 +85,7 @@ class AdditivesSQLiteCreator:
                 
                 # Create additive record
                 additive = {
+                    "taxonomy_id": key,
                     "e_number": e_number,
                     "name": name_en,
                     "vegetarian": vegetarian,
@@ -298,6 +299,7 @@ class AdditivesSQLiteCreator:
         
         manual_additives = [
             {
+                "taxonomy_id": "manual_e100",
                 "e_number": "E100",
                 "name": "Curcumin",
                 "vegetarian": "yes",
@@ -310,6 +312,7 @@ class AdditivesSQLiteCreator:
                 "last_updated": datetime.now().isoformat()
             },
             {
+                "taxonomy_id": "manual_e101",
                 "e_number": "E101", 
                 "name": "Riboflavin",
                 "vegetarian": "yes",
@@ -322,6 +325,7 @@ class AdditivesSQLiteCreator:
                 "last_updated": datetime.now().isoformat()
             },
             {
+                "taxonomy_id": "manual_e300",
                 "e_number": "E300",
                 "name": "Ascorbic acid",
                 "vegetarian": "yes",
@@ -545,7 +549,8 @@ class AdditivesSQLiteCreator:
         cursor.execute('''
         CREATE TABLE additives (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            e_number TEXT UNIQUE NOT NULL,
+            taxonomy_id TEXT UNIQUE NOT NULL,
+            e_number TEXT NOT NULL,
             name TEXT NOT NULL,
             risk_level TEXT NOT NULL,
             risk_color TEXT NOT NULL,
@@ -564,6 +569,7 @@ class AdditivesSQLiteCreator:
         ''')
         
         # Create indexes for better performance in KMP
+        cursor.execute('CREATE INDEX idx_taxonomy_id ON additives(taxonomy_id)')
         cursor.execute('CREATE INDEX idx_e_number ON additives(e_number)')
         cursor.execute('CREATE INDEX idx_risk_level ON additives(risk_level)')
         cursor.execute('CREATE INDEX idx_category ON additives(category)')
@@ -614,12 +620,13 @@ class AdditivesSQLiteCreator:
                 
                 cursor.execute('''
                 INSERT OR REPLACE INTO additives (
-                    e_number, name, risk_level, risk_color,
+                    taxonomy_id, e_number, name, risk_level, risk_color,
                     category, description, vegetarian, vegan,
                     efsa_evaluation, efsa_url, efsa_date, additives_classes,
                     sources, last_updated
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
+                    additive.get('taxonomy_id', f"manual_{additive['e_number']}"),
                     additive['e_number'],
                     additive['name'],
                     risk_level,
